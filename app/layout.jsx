@@ -1,16 +1,21 @@
 
 import "./globals.css";
+import { ScenarioProvider } from "./ScenarioContext";
 
 export const metadata = {
-  title: "RupAI | Financial Market Intelligence",
+  title: "RupAI | Financial Market Scenario Simulator",
   description:
-    "Understand currency movements and explore their impact on Indian financial markets.",
+    "Explore how economic shocks affect Indian financial markets and companies.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ScenarioProvider>
+          {children}
+        </ScenarioProvider>
+      </body>
     </html>
   );
 }
