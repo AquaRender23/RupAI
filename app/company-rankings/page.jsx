@@ -1,260 +1,550 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Navbar from "../../components/Navbar";
 import { useScenario } from "../ScenarioContext";
 
 import {
-  Activity,
-  ArrowDown,
-  ArrowDownRight,
-  ArrowUp,
-  ArrowUpRight,
-  Building2,
-  Filter,
   Search,
-  SlidersHorizontal,
-  TrendingDown,
+  Building2,
   TrendingUp,
-  RotateCcw,
-  BarChart3,
-  Target,
-  ShieldAlert,
+  TrendingDown,
+  Activity,
   Info,
+  Plus,
+  X,
+  ChevronDown,
+  Globe2,
+  Wallet,
+  Landmark,
+  ShieldCheck,
+  BarChart3,
 } from "lucide-react";
 
 // --------------------------------------------------
-// TEMPORARY FRONTEND COMPANY DATA
-// Replace with database and ML output later.
+// ILLUSTRATIVE FRONTEND COMPANY DATA
+// Replace with database data during backend integration.
 // --------------------------------------------------
 
-const companyData = [
+const companies = [
   {
-    id: 1,
+    id: "TCS",
     name: "Tata Consultancy Services",
     ticker: "TCS",
     sector: "Information Technology",
-    netFxExposure: 1250,
-    exposureType: "Net Exporter",
-    baseReturn: 2.8,
+    referencePrice: 3850,
+    sensitivity: "High Export Sensitivity",
     baseImpact: 2.5,
     uncertainty: 0.8,
+    exposure: {
+      exports: 90,
+      imports: 18,
+      debt: 12,
+      hedging: 35,
+    },
+    explanation:
+      "International IT service revenue may increase in rupee terms when foreign-currency earnings are converted.",
+    positive:
+      "Foreign-currency revenue may translate into higher INR earnings.",
+    negative:
+      "Overseas operating expenses and hedging can offset some benefits.",
   },
   {
-    id: 2,
+    id: "INFY",
     name: "Infosys",
     ticker: "INFY",
     sector: "Information Technology",
-    netFxExposure: 980,
-    exposureType: "Net Exporter",
-    baseReturn: 2.5,
+    referencePrice: 1580,
+    sensitivity: "High Export Sensitivity",
     baseImpact: 2.2,
     uncertainty: 0.9,
+    exposure: {
+      exports: 85,
+      imports: 20,
+      debt: 10,
+      hedging: 40,
+    },
+    explanation:
+      "International IT services revenue can create a positive currency translation effect.",
+    positive:
+      "Foreign-currency service revenue may increase in INR terms.",
+    negative:
+      "Overseas expenses and currency hedging may reduce the benefit.",
   },
   {
-    id: 3,
+    id: "WIPRO",
     name: "Wipro",
     ticker: "WIPRO",
     sector: "Information Technology",
-    netFxExposure: 640,
-    exposureType: "Net Exporter",
-    baseReturn: 1.9,
+    referencePrice: 285,
+    sensitivity: "High Export Sensitivity",
     baseImpact: 1.7,
     uncertainty: 1.1,
+    exposure: {
+      exports: 78,
+      imports: 22,
+      debt: 15,
+      hedging: 32,
+    },
+    explanation:
+      "International service delivery creates potential exposure to foreign-currency earnings.",
+    positive:
+      "Foreign-currency service revenue may translate into higher INR revenue.",
+    negative:
+      "Foreign-currency operating costs may offset some translation benefits.",
   },
   {
-    id: 4,
+    id: "SUNPHARMA",
     name: "Sun Pharmaceutical",
     ticker: "SUNPHARMA",
     sector: "Pharmaceuticals",
-    netFxExposure: 520,
-    exposureType: "Net Exporter",
-    baseReturn: 1.6,
+    referencePrice: 1720,
+    sensitivity: "Moderate Export Sensitivity",
     baseImpact: 1.4,
     uncertainty: 0.9,
+    exposure: {
+      exports: 72,
+      imports: 45,
+      debt: 18,
+      hedging: 30,
+    },
+    explanation:
+      "International pharmaceutical sales may benefit from currency translation, while imported inputs create cost pressure.",
+    positive:
+      "Foreign sales may translate into higher rupee earnings.",
+    negative:
+      "Imported ingredients and materials may become more expensive.",
   },
   {
-    id: 5,
-    name: "Dr. Reddy's Laboratories",
-    ticker: "DRREDDY",
-    sector: "Pharmaceuticals",
-    netFxExposure: 410,
-    exposureType: "Net Exporter",
-    baseReturn: 1.4,
-    baseImpact: 1.2,
-    uncertainty: 1.0,
-  },
-  {
-    id: 6,
-    name: "Cipla",
-    ticker: "CIPLA",
-    sector: "Pharmaceuticals",
-    netFxExposure: 280,
-    exposureType: "Net Exporter",
-    baseReturn: 1.1,
-    baseImpact: 0.9,
-    uncertainty: 0.8,
-  },
-  {
-    id: 7,
+    id: "RELIANCE",
     name: "Reliance Industries",
     ticker: "RELIANCE",
     sector: "Energy & Conglomerates",
-    netFxExposure: -750,
-    exposureType: "Net Importer",
-    baseReturn: -1.2,
+    referencePrice: 1450,
+    sensitivity: "Mixed Currency Sensitivity",
     baseImpact: -1.0,
     uncertainty: 1.3,
+    exposure: {
+      exports: 65,
+      imports: 82,
+      debt: 60,
+      hedging: 45,
+    },
+    explanation:
+      "Its diversified operations have both foreign-currency receipts and dollar-linked costs.",
+    positive:
+      "Export receipts may provide a partial currency-related benefit.",
+    negative:
+      "Dollar-linked purchases and foreign-currency debt may become more expensive.",
   },
   {
-    id: 8,
-    name: "ONGC",
-    ticker: "ONGC",
-    sector: "Oil & Gas",
-    netFxExposure: -460,
-    exposureType: "Net Importer",
-    baseReturn: -1.8,
-    baseImpact: -1.6,
-    uncertainty: 1.1,
-  },
-  {
-    id: 9,
-    name: "Indian Oil Corporation",
-    ticker: "IOC",
-    sector: "Oil & Gas",
-    netFxExposure: -580,
-    exposureType: "Net Importer",
-    baseReturn: -1.5,
-    baseImpact: -1.3,
-    uncertainty: 1.2,
-  },
-  {
-    id: 10,
-    name: "Tata Motors",
-    ticker: "TATAMOTORS",
-    sector: "Automobile",
-    netFxExposure: -390,
-    exposureType: "Net Importer",
-    baseReturn: -1.4,
-    baseImpact: -1.2,
-    uncertainty: 1.4,
-  },
-  {
-    id: 11,
+    id: "MARUTI",
     name: "Maruti Suzuki",
     ticker: "MARUTI",
     sector: "Automobile",
-    netFxExposure: -520,
-    exposureType: "Net Importer",
-    baseReturn: -2.1,
+    referencePrice: 12500,
+    sensitivity: "High Import Sensitivity",
     baseImpact: -1.9,
     uncertainty: 1.2,
+    exposure: {
+      exports: 25,
+      imports: 75,
+      debt: 12,
+      hedging: 25,
+    },
+    explanation:
+      "Imported components and international supply-chain costs can create pressure when the rupee weakens.",
+    positive:
+      "Vehicle exports may provide some foreign-currency earnings.",
+    negative:
+      "Imported components and materials may increase production costs.",
   },
-  {
-    id: 12,
-    name: "Mahindra & Mahindra",
-    ticker: "M&M",
-    sector: "Automobile",
-    netFxExposure: -240,
-    exposureType: "Net Importer",
-    baseReturn: -0.9,
-    baseImpact: -0.7,
-    uncertainty: 1.0,
-  },
-  {
-    id: 13,
-    name: "Bajaj Auto",
-    ticker: "BAJAJ-AUTO",
-    sector: "Automobile",
-    netFxExposure: -180,
-    exposureType: "Net Importer",
-    baseReturn: -1.1,
-    baseImpact: -0.9,
-    uncertainty: 0.9,
-  },
-  {
-    id: 14,
-    name: "Hero MotoCorp",
-    ticker: "HEROMOTOCO",
-    sector: "Automobile",
-    netFxExposure: -130,
-    exposureType: "Net Importer",
-    baseReturn: -0.8,
-    baseImpact: -0.6,
-    uncertainty: 0.8,
-  },
-  {
-    id: 15,
-    name: "Hindustan Unilever",
-    ticker: "HINDUNILVR",
-    sector: "FMCG",
-    netFxExposure: -90,
-    exposureType: "Net Importer",
-    baseReturn: -0.4,
-    baseImpact: -0.3,
-    uncertainty: 0.7,
-  },
-];
-
-const sectors = [
-  "All Sectors",
-  ...new Set(companyData.map((company) => company.sector)),
-];
-
-const impactCategories = [
-  "All Categories",
-  "Beneficiary",
-  "Neutral",
-  "Impacted",
 ];
 
 // --------------------------------------------------
 // HELPERS
 // --------------------------------------------------
 
-function getImpactCategory(value) {
-  if (value > 0.25) return "Beneficiary";
-  if (value < -0.25) return "Impacted";
-  return "Neutral";
+function getImpact(company, depreciation) {
+  return company.baseImpact * (depreciation / 10);
 }
 
-function formatExposure(value) {
-  const absoluteValue = Math.abs(value);
-
-  if (absoluteValue >= 1000) {
-    return `$${(absoluteValue / 1000).toFixed(2)}B`;
-  }
-
-  return `$${absoluteValue}M`;
+function formatPrice(value) {
+  return `₹${value.toLocaleString("en-IN")}`;
 }
 
-function formatPercentage(value) {
+function formatImpact(value) {
   return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-function StatCard({ title, value, subtitle, icon: Icon, color }) {
+function getImpactColor(value) {
+  if (value > 0.05) return "text-emerald-400";
+  if (value < -0.05) return "text-red-400";
+  return "text-slate-300";
+}
+
+// --------------------------------------------------
+// COMPANY SELECTOR
+// --------------------------------------------------
+
+function CompanySelector({ selectedCompanies, onToggle }) {
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const availableCompanies = companies.filter((company) => {
+    const query = search.toLowerCase();
+
+    return (
+      company.name.toLowerCase().includes(query) ||
+      company.ticker.toLowerCase().includes(query)
+    );
+  });
+
   return (
-    <div className="min-w-0 rounded-2xl border border-white/10 bg-[#101e35] p-5 transition hover:border-cyan-400/30">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium text-slate-400">
-            {title}
-          </p>
+    <div className="relative">
+      <label className="mb-2 block text-xs font-semibold text-slate-300">
+        Search company name or ticker
+      </label>
 
-          <p className={`mt-3 text-2xl font-bold ${color}`}>
-            {value}
-          </p>
+      <div className="relative">
+        <Search
+          size={17}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
+        />
 
-          <p className="mt-2 text-xs text-slate-500">
-            {subtitle}
-          </p>
-        </div>
+        <input
+          value={search}
+          onFocus={() => setIsOpen(true)}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setIsOpen(true);
+          }}
+          placeholder="Search companies..."
+          className="w-full rounded-xl border border-white/10 bg-[#0b192d] py-3 pl-11 pr-12 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
+        />
 
-        <div className="rounded-xl bg-white/[0.05] p-3">
-          <Icon size={20} className={color} />
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+        >
+          <ChevronDown size={17} />
+        </button>
+      </div>
+
+      {isOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close company selector"
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={() => setIsOpen(false)}
+          />
+
+          <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-[#14243c] p-2 shadow-2xl">
+            {availableCompanies.length > 0 ? (
+              availableCompanies.map((company) => {
+                const isSelected = selectedCompanies.some(
+                  (item) => item.id === company.id
+                );
+
+                const limitReached =
+                  selectedCompanies.length >= 3 && !isSelected;
+
+                return (
+                  <button
+                    type="button"
+                    key={company.id}
+                    disabled={limitReached}
+                    onClick={() => {
+                      onToggle(company);
+                      setSearch("");
+                      setIsOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-3 text-left transition ${
+                      isSelected
+                        ? "bg-cyan-400/10"
+                        : "hover:bg-white/[0.05]"
+                    } disabled:cursor-not-allowed disabled:opacity-40`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {company.name}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        {company.ticker} · {company.sector}
+                      </p>
+                    </div>
+
+                    {isSelected ? (
+                      <span className="text-xs font-semibold text-cyan-300">
+                        Added
+                      </span>
+                    ) : (
+                      <Plus size={17} className="text-cyan-400" />
+                    )}
+                  </button>
+                );
+              })
+            ) : (
+              <p className="p-4 text-center text-xs text-slate-400">
+                No companies found.
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      <p className="mt-2 text-[11px] text-slate-500">
+        Compare up to 3 companies.
+      </p>
+    </div>
+  );
+}
+
+// --------------------------------------------------
+// COMPACT EXPOSURE BAR
+// --------------------------------------------------
+
+function ExposureBar({ label, value, color }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex justify-between gap-3">
+        <span className="text-xs text-slate-300">{label}</span>
+        <span className="text-xs font-semibold text-slate-400">
+          {value}/100
+        </span>
+      </div>
+
+      <div className="h-1.5 overflow-hidden rounded-full bg-slate-700">
+        <div
+          className={`h-full rounded-full ${color}`}
+          style={{ width: `${value}%` }}
+        />
       </div>
     </div>
+  );
+}
+
+// --------------------------------------------------
+// COMPANY DETAIL CARD
+// --------------------------------------------------
+
+function CompanyDetailCard({
+  company,
+  depreciation,
+  onRemove,
+}) {
+  const impact = getImpact(company, depreciation);
+
+  const uncertainty =
+    company.uncertainty * Math.max(depreciation / 10, 0.25);
+
+  const lowerEstimate = impact - uncertainty;
+  const upperEstimate = impact + uncertainty;
+
+  const exposureItems = [
+    {
+      label: "Export Revenue",
+      value: company.exposure.exports,
+      color: "bg-emerald-400",
+    },
+    {
+      label: "Import Expenses",
+      value: company.exposure.imports,
+      color: "bg-red-400",
+    },
+    {
+      label: "Foreign Currency Debt",
+      value: company.exposure.debt,
+      color: "bg-amber-400",
+    },
+    {
+      label: "Currency Hedging",
+      value: company.exposure.hedging,
+      color: "bg-violet-400",
+    },
+  ];
+
+  return (
+    <article className="min-w-0 rounded-2xl border border-white/10 bg-[#101e35] p-5">
+
+      {/* COMPANY HEADER */}
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="shrink-0 rounded-xl bg-cyan-400/10 p-3">
+            <Building2 size={21} className="text-cyan-300" />
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-white">
+              {company.name}
+            </h3>
+
+            <p className="mt-1 text-xs text-slate-400">
+              {company.ticker} · {company.sector}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onRemove(company.id)}
+          aria-label={`Remove ${company.name}`}
+          className="shrink-0 rounded-lg p-2 text-slate-500 transition hover:bg-red-400/10 hover:text-red-400"
+        >
+          <X size={17} />
+        </button>
+      </div>
+
+      {/* SENSITIVITY */}
+
+      <div className="mt-4">
+        <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold text-cyan-300">
+          {company.sensitivity}
+        </span>
+      </div>
+
+      {/* KEY METRICS */}
+
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-[#0b192d] p-3">
+          <p className="text-[11px] text-slate-500">
+            Reference Stock Price
+          </p>
+
+          <p className="mt-2 text-lg font-bold text-white">
+            {formatPrice(company.referencePrice)}
+          </p>
+
+          <p className="mt-1 text-[10px] text-amber-300">
+            Illustrative
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-[#0b192d] p-3">
+          <p className="text-[11px] text-slate-500">
+            Estimated Impact
+          </p>
+
+          <p className={`mt-2 text-lg font-bold ${getImpactColor(impact)}`}>
+            {formatImpact(impact)}
+          </p>
+
+          <p className="mt-1 text-[10px] text-slate-500">
+            {depreciation}% depreciation
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-[#0b192d] p-3">
+          <p className="text-[11px] text-slate-500">
+            Lower Estimate
+          </p>
+
+          <p className="mt-2 font-semibold text-red-300">
+            {formatImpact(lowerEstimate)}
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-[#0b192d] p-3">
+          <p className="text-[11px] text-slate-500">
+            Upper Estimate
+          </p>
+
+          <p className="mt-2 font-semibold text-emerald-300">
+            {formatImpact(upperEstimate)}
+          </p>
+        </div>
+      </div>
+
+      {/* EXPOSURE BREAKDOWN */}
+
+      <div className="mt-6 border-t border-white/10 pt-5">
+        <div className="flex items-center gap-2">
+          <Globe2 size={17} className="text-cyan-400" />
+
+          <h4 className="text-sm font-bold text-white">
+            Currency Exposure
+          </h4>
+        </div>
+
+        <p className="mt-1 text-[11px] text-slate-500">
+          Illustrative relative exposure index
+        </p>
+
+        <div className="mt-4 space-y-4">
+          {exposureItems.map((item) => (
+            <ExposureBar
+              key={item.label}
+              label={item.label}
+              value={item.value}
+              color={item.color}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* SHORT EXPLANATION */}
+
+      <div className="mt-6 border-t border-white/10 pt-5">
+        <h4 className="text-sm font-bold text-white">
+          Why is this company affected?
+        </h4>
+
+        <p className="mt-2 text-xs leading-5 text-slate-400">
+          {company.explanation}
+        </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[0.04] p-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={15} className="text-emerald-400" />
+
+              <span className="text-xs font-semibold text-emerald-300">
+                Potential Benefit
+              </span>
+            </div>
+
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              {company.positive}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-red-400/15 bg-red-400/[0.04] p-3">
+            <div className="flex items-center gap-2">
+              <TrendingDown size={15} className="text-red-400" />
+
+              <span className="text-xs font-semibold text-red-300">
+                Potential Risk
+              </span>
+            </div>
+
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              {company.negative}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* DATA NOTE */}
+
+      <div className="mt-5 rounded-lg bg-[#0b192d] px-3 py-2.5">
+        <div className="flex items-start gap-2">
+          <Info
+            size={14}
+            className="mt-0.5 shrink-0 text-amber-300"
+          />
+
+          <p className="text-[10px] leading-4 text-slate-500">
+            Prices, exposure indices and prediction estimates are
+            illustrative frontend values, not verified disclosures
+            or actual ML outputs.
+          </p>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -262,152 +552,40 @@ function StatCard({ title, value, subtitle, icon: Icon, color }) {
 // MAIN PAGE
 // --------------------------------------------------
 
-export default function CompanyRankings() {
-  const { scenario, updateScenario } = useScenario();
+export default function CompanyDetailsPage() {
+  const { scenario } = useScenario();
 
   const depreciation = Number(scenario.depreciation ?? 10);
 
-  // FILTER STATES
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSector, setSelectedSector] =
-    useState("All Sectors");
-
-  const [selectedCategory, setSelectedCategory] =
-    useState("All Categories");
-
-  const [minReturn, setMinReturn] = useState("");
-  const [maxReturn, setMaxReturn] = useState("");
-
-  const [sortBy, setSortBy] = useState("impact-high");
-
-  // --------------------------------------------------
-  // CALCULATE COMPANY VALUES
-  // Temporary illustrative frontend calculation.
-  // --------------------------------------------------
-
-  const calculatedCompanies = useMemo(() => {
-    const shockFactor = depreciation / 10;
-
-    return companyData.map((company) => {
-      const predictedReturn = company.baseReturn * shockFactor;
-
-      const estimatedImpact = company.baseImpact * shockFactor;
-
-      const uncertainty =
-        company.uncertainty * Math.max(shockFactor, 0.25);
-
-      return {
-        ...company,
-        predictedReturn,
-        estimatedImpact,
-        uncertainty,
-        category: getImpactCategory(estimatedImpact),
-      };
-    });
-  }, [depreciation]);
-
-  // --------------------------------------------------
-  // FILTER AND SORT
-  // --------------------------------------------------
-
-  const filteredCompanies = useMemo(() => {
-    let result = calculatedCompanies.filter((company) => {
-      const searchMatch =
-        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.ticker.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const sectorMatch =
-        selectedSector === "All Sectors" ||
-        company.sector === selectedSector;
-
-      const categoryMatch =
-        selectedCategory === "All Categories" ||
-        company.category === selectedCategory;
-
-      const minMatch =
-        minReturn === "" ||
-        company.predictedReturn >= Number(minReturn);
-
-      const maxMatch =
-        maxReturn === "" ||
-        company.predictedReturn <= Number(maxReturn);
-
-      return (
-        searchMatch &&
-        sectorMatch &&
-        categoryMatch &&
-        minMatch &&
-        maxMatch
-      );
-    });
-
-    result.sort((a, b) => {
-      switch (sortBy) {
-        case "impact-low":
-          return a.estimatedImpact - b.estimatedImpact;
-
-        case "uncertainty-high":
-          return b.uncertainty - a.uncertainty;
-
-        case "uncertainty-low":
-          return a.uncertainty - b.uncertainty;
-
-        case "impact-high":
-        default:
-          return b.estimatedImpact - a.estimatedImpact;
-      }
-    });
-
-    return result;
-  }, [
-    calculatedCompanies,
-    searchTerm,
-    selectedSector,
-    selectedCategory,
-    minReturn,
-    maxReturn,
-    sortBy,
+  // TCS IS THE INITIAL SELECTION
+  const [selectedCompanies, setSelectedCompanies] = useState([
+    companies[0],
   ]);
 
-  // --------------------------------------------------
-  // SUMMARY VALUES
-  // --------------------------------------------------
+  const toggleCompany = (company) => {
+    setSelectedCompanies((current) => {
+      const alreadySelected = current.some(
+        (item) => item.id === company.id
+      );
 
-  const beneficiaries = filteredCompanies.filter(
-    (company) => company.category === "Beneficiary"
-  ).length;
+      if (alreadySelected) {
+        if (current.length === 1) return current;
 
-  const impacted = filteredCompanies.filter(
-    (company) => company.category === "Impacted"
-  ).length;
+        return current.filter((item) => item.id !== company.id);
+      }
 
-  const neutral = filteredCompanies.filter(
-    (company) => company.category === "Neutral"
-  ).length;
+      if (current.length >= 3) return current;
 
-  const topCompany = [...filteredCompanies].sort(
-    (a, b) => b.estimatedImpact - a.estimatedImpact
-  )[0];
+      return [...current, company];
+    });
+  };
 
-  const averageReturn =
-    filteredCompanies.length > 0
-      ? filteredCompanies.reduce(
-          (total, company) => total + company.predictedReturn,
-          0
-        ) / filteredCompanies.length
-      : 0;
+  const removeCompany = (id) => {
+    setSelectedCompanies((current) => {
+      if (current.length === 1) return current;
 
-  // --------------------------------------------------
-  // RESET FILTERS
-  // --------------------------------------------------
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setSelectedSector("All Sectors");
-    setSelectedCategory("All Categories");
-    setMinReturn("");
-    setMaxReturn("");
-    setSortBy("impact-high");
+      return current.filter((company) => company.id !== id);
+    });
   };
 
   return (
@@ -420,21 +598,20 @@ export default function CompanyRankings() {
 
         <div className="mb-8">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">
-            <BarChart3 size={16} />
-            Market Intelligence
+            <Activity size={16} />
+            Company Intelligence
           </div>
 
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Company Rankings
+                Company Details
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-                Discover which companies benefit or face pressure
-                under different rupee depreciation scenarios.
-                Compare estimated impact, predicted returns and
-                foreign-exchange exposure.
+                Understand how currency movements affect individual
+                companies through their foreign-exchange exposure,
+                estimated impact and business factors.
               </p>
             </div>
 
@@ -459,579 +636,152 @@ export default function CompanyRankings() {
           />
 
           <p className="text-xs leading-5 text-amber-100/80">
-            Frontend preview: company exposure, returns and
-            uncertainty values are illustrative sample data.
-            They are not actual market data or ML predictions.
+            Frontend preview: stock prices, exposure indices and
+            prediction estimates are illustrative sample values.
+            They are not verified company disclosures or actual
+            ML predictions.
           </p>
         </div>
 
-        {/* DEPRECIATION SLIDER */}
+        {/* COMPANY SELECTOR */}
 
         <section className="rounded-2xl border border-white/10 bg-[#101e35] p-6 sm:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-5">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-                <TrendingDown size={19} className="text-cyan-400" />
-                Rupee Depreciation
-              </div>
+              <h2 className="text-lg font-bold">
+                Select Companies
+              </h2>
 
-              <p className="mt-2 text-xs text-slate-400">
-                Adjust the depreciation level to update company rankings.
+              <p className="mt-1 text-xs text-slate-400">
+                Search and compare company-level currency exposure.
               </p>
             </div>
 
-            <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/[0.07] px-5 py-3 text-right">
-              <p className="text-xs text-slate-400">
-                Selected depreciation
-              </p>
-
-              <p className="mt-1 text-3xl font-bold text-cyan-300">
-                {depreciation}%
-              </p>
+            <div className="rounded-lg border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2 text-xs font-semibold text-cyan-300">
+              {selectedCompanies.length} / 3 selected
             </div>
           </div>
 
-          <div className="mt-8 w-full min-w-0">
-            <input
-              type="range"
-              min="0"
-              max="20"
-              step="1"
-              value={depreciation}
-              onChange={(e) =>
-                updateScenario({
-                  depreciation: Number(e.target.value),
-                })
-              }
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-700 accent-cyan-400"
-            />
+          <CompanySelector
+            selectedCompanies={selectedCompanies}
+            onToggle={toggleCompany}
+          />
 
-            <div className="mt-3 flex justify-between text-xs text-slate-500">
-              <span>0%</span>
-              <span>5%</span>
-              <span>10%</span>
-              <span>15%</span>
-              <span>20%</span>
-            </div>
-          </div>
+          {/* SELECTED COMPANY CHIPS */}
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            {[0, 5, 8, 10, 15, 20].map((value) => (
-              <button
-                key={value}
-                onClick={() =>
-                  updateScenario({ depreciation: value })
-                }
-                className={`rounded-lg border px-5 py-2 text-sm transition ${
-                  depreciation === value
-                    ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
-                    : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/30 hover:text-white"
-                }`}
+          <div className="mt-5 flex flex-wrap gap-2">
+            {selectedCompanies.map((company) => (
+              <div
+                key={company.id}
+                className="flex items-center gap-2 rounded-lg border border-cyan-400/20 bg-cyan-400/[0.07] px-3 py-2"
               >
-                {value}%
-              </button>
+                <span className="text-xs font-semibold text-cyan-200">
+                  {company.ticker}
+                </span>
+
+                {selectedCompanies.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeCompany(company.id)}
+                    aria-label={`Remove ${company.ticker}`}
+                    className="text-slate-400 transition hover:text-red-400"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         </section>
 
-        {/* SUMMARY CARDS */}
-
-        <section className="mt-9">
-          <div className="mb-5">
-            <h2 className="text-xl font-bold">
-              Ranking Summary
-            </h2>
-
-            <p className="mt-1 text-xs text-slate-400">
-              Based on the current depreciation scenario and filters.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              title="Companies Analysed"
-              value={filteredCompanies.length}
-              subtitle={`Out of ${companyData.length} companies`}
-              icon={Building2}
-              color="text-cyan-300"
-            />
-
-            <StatCard
-              title="Beneficiaries"
-              value={beneficiaries}
-              subtitle="Positive estimated impact"
-              icon={TrendingUp}
-              color="text-emerald-400"
-            />
-
-            <StatCard
-              title="Impacted Companies"
-              value={impacted}
-              subtitle="Negative estimated impact"
-              icon={TrendingDown}
-              color="text-red-400"
-            />
-
-            <StatCard
-              title="Average Predicted Return"
-              value={formatPercentage(averageReturn)}
-              subtitle={`${neutral} neutral companies`}
-              icon={Target}
-              color={
-                averageReturn >= 0
-                  ? "text-emerald-400"
-                  : "text-red-400"
-              }
-            />
-          </div>
-        </section>
-
-        {/* TOP COMPANY HIGHLIGHT */}
-
-        {topCompany && (
-          <section className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.04] p-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-emerald-400/10 p-3">
-                  <ArrowUpRight
-                    size={23}
-                    className="text-emerald-400"
-                  />
-                </div>
-
-                <div>
-                  <p className="text-xs text-slate-400">
-                    Highest estimated impact in current results
-                  </p>
-
-                  <p className="mt-1 font-semibold text-white">
-                    {topCompany.name}
-                    <span className="ml-2 text-xs text-slate-400">
-                      {topCompany.ticker}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-2xl font-bold text-emerald-400">
-                {formatPercentage(topCompany.estimatedImpact)}
-              </p>
-            </div>
-          </section>
-        )}
-
-        {/* FILTERS */}
-
-        <section className="mt-10 rounded-2xl border border-white/10 bg-[#101e35] p-6">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <Filter size={19} className="text-cyan-400" />
-
-                <h2 className="text-lg font-bold">
-                  Filter & Sort Companies
-                </h2>
-              </div>
-
-              <p className="mt-1 text-xs text-slate-400">
-                Narrow down companies and customise the ranking order.
-              </p>
-            </div>
-
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-xs font-medium text-slate-300 transition hover:border-red-400/40 hover:text-red-300"
-            >
-              <RotateCcw size={15} />
-              Reset Filters
-            </button>
-          </div>
-
-          {/* SEARCH */}
-
-          <div className="mb-5">
-            <label className="mb-2 block text-xs font-medium text-slate-300">
-              Search by company name or ticker
-            </label>
-
-            <div className="relative">
-              <Search
-                size={17}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-              />
-
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search companies... e.g. Infosys, TCS"
-                className="w-full rounded-xl border border-white/10 bg-[#0b192d] py-3 pl-11 pr-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400"
-              />
-            </div>
-          </div>
-
-          {/* FILTER GRID */}
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-
-            {/* SECTOR */}
-
-            <div>
-              <label className="mb-2 block text-xs font-medium text-slate-300">
-                Filter by Sector
-              </label>
-
-              <select
-                value={selectedSector}
-                onChange={(e) => setSelectedSector(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#0b192d] px-4 py-3 text-sm text-white outline-none focus:border-cyan-400"
-              >
-                {sectors.map((sector) => (
-                  <option key={sector} value={sector}>
-                    {sector}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* IMPACT CATEGORY */}
-
-            <div>
-              <label className="mb-2 block text-xs font-medium text-slate-300">
-                Filter by Impact Category
-              </label>
-
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#0b192d] px-4 py-3 text-sm text-white outline-none focus:border-cyan-400"
-              >
-                {impactCategories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* SORT */}
-
-            <div>
-              <label className="mb-2 block text-xs font-medium text-slate-300">
-                Sort Rankings
-              </label>
-
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#0b192d] px-4 py-3 text-sm text-white outline-none focus:border-cyan-400"
-              >
-                <option value="impact-high">
-                  Highest Estimated Impact
-                </option>
-
-                <option value="impact-low">
-                  Lowest Estimated Impact
-                </option>
-
-                <option value="uncertainty-high">
-                  Highest Prediction Uncertainty
-                </option>
-
-                <option value="uncertainty-low">
-                  Lowest Prediction Uncertainty
-                </option>
-              </select>
-            </div>
-          </div>
-
-          {/* PREDICTED RETURN RANGE */}
-
-          <div className="mt-6 rounded-xl border border-white/10 bg-[#0b192d] p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <SlidersHorizontal
-                size={17}
-                className="text-cyan-400"
-              />
-
-              <p className="text-sm font-semibold text-slate-200">
-                Predicted Return Range
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs text-slate-400">
-                  Minimum return (%)
-                </label>
-
-                <input
-                  type="number"
-                  step="0.1"
-                  value={minReturn}
-                  onChange={(e) => setMinReturn(e.target.value)}
-                  placeholder="e.g. -2"
-                  className="w-full rounded-lg border border-white/10 bg-[#101e35] px-4 py-3 text-sm text-white outline-none focus:border-cyan-400"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs text-slate-400">
-                  Maximum return (%)
-                </label>
-
-                <input
-                  type="number"
-                  step="0.1"
-                  value={maxReturn}
-                  onChange={(e) => setMaxReturn(e.target.value)}
-                  placeholder="e.g. 5"
-                  className="w-full rounded-lg border border-white/10 bg-[#101e35] px-4 py-3 text-sm text-white outline-none focus:border-cyan-400"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-slate-400">
-              Showing{" "}
-              <span className="font-semibold text-cyan-300">
-                {filteredCompanies.length}
-              </span>{" "}
-              of {companyData.length} companies
-            </p>
-
-            <button
-              onClick={resetFilters}
-              className="text-xs text-slate-400 underline decoration-slate-600 underline-offset-4 hover:text-cyan-300"
-            >
-              Clear all filters
-            </button>
-          </div>
-        </section>
-
-        {/* RANKING TABLE */}
+        {/* COMPANY ANALYSIS */}
 
         <section className="mt-10">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold">
-                Company Rankings
+                Company Analysis
               </h2>
 
               <p className="mt-1 text-xs text-slate-400">
-                Companies ranked according to estimated scenario impact.
+                Compare currency exposure and estimated impact.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#101e35] px-3 py-2 text-xs text-slate-400">
-              <Activity size={15} className="text-cyan-400" />
-              {depreciation}% depreciation scenario
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <Globe2 size={15} className="text-cyan-400" />
+              {depreciation}% depreciation
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#101e35]">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1150px] border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-white/10 bg-[#14243c]">
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Rank
-                    </th>
+          <div
+            className={`grid grid-cols-1 items-start gap-6 ${
+              selectedCompanies.length === 1
+                ? "max-w-4xl"
+                : selectedCompanies.length === 2
+                ? "xl:grid-cols-2"
+                : "xl:grid-cols-3"
+            }`}
+          >
+            {selectedCompanies.map((company) => (
+              <CompanyDetailCard
+                key={company.id}
+                company={company}
+                depreciation={depreciation}
+                onRemove={removeCompany}
+              />
+            ))}
+          </div>
+        </section>
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Company
-                    </th>
+        {/* DATA TRANSPARENCY */}
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Sector
-                    </th>
+        <section className="mt-10 rounded-2xl border border-white/10 bg-[#101e35] p-6">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={19} className="text-cyan-400" />
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Net FX Exposure
-                    </th>
+            <h2 className="text-lg font-bold">
+              Understanding the Data
+            </h2>
+          </div>
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Predicted Return
-                    </th>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            RupAI distinguishes between company-reported information,
+            values derived from available inputs and assumptions used
+            for scenario analysis.
+          </p>
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Estimated Impact
-                    </th>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/[0.04] p-4">
+              <p className="text-sm font-bold text-emerald-300">
+                Reported Values
+              </p>
 
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Prediction Uncertainty
-                    </th>
-
-                    <th className="px-5 py-4 text-xs font-semibold text-slate-400">
-                      Impact Category
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredCompanies.length > 0 ? (
-                    filteredCompanies.map((company, index) => {
-                      const positive =
-                        company.estimatedImpact > 0.25;
-
-                      const negative =
-                        company.estimatedImpact < -0.25;
-
-                      return (
-                        <tr
-                          key={company.id}
-                          className="border-b border-white/[0.06] transition hover:bg-white/[0.025]"
-                        >
-                          {/* RANK */}
-
-                          <td className="px-5 py-4">
-                            <span
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold ${
-                                index === 0
-                                  ? "bg-cyan-400/15 text-cyan-300"
-                                  : "bg-white/[0.05] text-slate-300"
-                              }`}
-                            >
-                              {index + 1}
-                            </span>
-                          </td>
-
-                          {/* COMPANY */}
-
-                          <td className="px-5 py-4">
-                            <p className="text-sm font-semibold text-white">
-                              {company.name}
-                            </p>
-
-                            <p className="mt-1 text-xs text-slate-500">
-                              {company.ticker}
-                            </p>
-                          </td>
-
-                          {/* SECTOR */}
-
-                          <td className="px-5 py-4">
-                            <span className="text-xs text-slate-300">
-                              {company.sector}
-                            </span>
-                          </td>
-
-                          {/* NET FX EXPOSURE */}
-
-                          <td className="px-5 py-4">
-                            <div
-                              className={`text-sm font-semibold ${
-                                company.exposureType === "Net Exporter"
-                                  ? "text-emerald-400"
-                                  : "text-red-400"
-                              }`}
-                            >
-                              {formatExposure(company.netFxExposure)}
-                            </div>
-
-                            <p className="mt-1 text-[10px] text-slate-500">
-                              {company.exposureType}
-                            </p>
-                          </td>
-
-                          {/* PREDICTED RETURN */}
-
-                          <td className="px-5 py-4">
-                            <span
-                              className={`text-sm font-semibold ${
-                                company.predictedReturn >= 0
-                                  ? "text-emerald-400"
-                                  : "text-red-400"
-                              }`}
-                            >
-                              {formatPercentage(company.predictedReturn)}
-                            </span>
-                          </td>
-
-                          {/* ESTIMATED IMPACT */}
-
-                          <td className="px-5 py-4">
-                            <div
-                              className={`flex items-center gap-1.5 text-sm font-bold ${
-                                positive
-                                  ? "text-emerald-400"
-                                  : negative
-                                  ? "text-red-400"
-                                  : "text-slate-300"
-                              }`}
-                            >
-                              {positive ? (
-                                <ArrowUpRight size={16} />
-                              ) : negative ? (
-                                <ArrowDownRight size={16} />
-                              ) : null}
-
-                              {formatPercentage(company.estimatedImpact)}
-                            </div>
-                          </td>
-
-                          {/* UNCERTAINTY */}
-
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-slate-300">
-                                ±{company.uncertainty.toFixed(2)}%
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* CATEGORY */}
-
-                          <td className="px-5 py-4">
-                            <span
-                              className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold ${
-                                company.category === "Beneficiary"
-                                  ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-400"
-                                  : company.category === "Impacted"
-                                  ? "border-red-400/20 bg-red-400/10 text-red-400"
-                                  : "border-slate-400/20 bg-slate-400/10 text-slate-300"
-                              }`}
-                            >
-                              {company.category}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="px-5 py-16 text-center">
-                        <Search
-                          size={30}
-                          className="mx-auto text-slate-500"
-                        />
-
-                        <p className="mt-4 font-semibold text-white">
-                          No matching companies found
-                        </p>
-
-                        <p className="mt-2 text-xs text-slate-400">
-                          Try changing your search or filters.
-                        </p>
-
-                        <button
-                          onClick={resetFilters}
-                          className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 text-xs font-bold text-[#071326] hover:bg-cyan-300"
-                        >
-                          Reset Filters
-                        </button>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Information sourced from company filings and
+                identified disclosures, with source and date.
+              </p>
             </div>
 
-            <div className="border-t border-white/10 px-5 py-4">
-              <p className="text-xs text-slate-500">
-                Rankings are recalculated when the depreciation
-                percentage, filters or sorting options change.
+            <div className="rounded-xl border border-cyan-400/15 bg-cyan-400/[0.04] p-4">
+              <p className="text-sm font-bold text-cyan-300">
+                Derived Values
+              </p>
+
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Calculations produced from reported data and
+                scenario inputs.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-amber-400/15 bg-amber-400/[0.04] p-4">
+              <p className="text-sm font-bold text-amber-300">
+                Illustrative Assumptions
+              </p>
+
+              <p className="mt-2 text-xs leading-5 text-slate-400">
+                Demonstration inputs used while the database and
+                ML models are being integrated.
               </p>
             </div>
           </div>
@@ -1043,11 +793,9 @@ export default function CompanyRankings() {
           <Info size={15} className="mt-0.5 shrink-0" />
 
           <p>
-            Net FX exposure is shown as illustrative USD-denominated
-            exposure in millions. Positive values represent net
-            exporters and negative values represent net importers.
-            Actual exposure calculations and model confidence
-            intervals will be connected during backend integration.
+            Actual company exposure, stock prices, hedging positions
+            and prediction intervals will be populated from verified
+            sources and the integrated ML model.
           </p>
         </div>
       </div>
