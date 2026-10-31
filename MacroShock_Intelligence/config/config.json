@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "start_date": "2005-01-01",
+  "test_start": "2018-01-01",
+  "horizons_months": [1],
+  "quantiles": [0.1, 0.5, 0.9],
+  "n_shock_lags": 3,
+  "n_target_lags": 3,
+  "min_train_obs": 60,
+  "min_test_obs": 12,
+  "scenario_shocks_pct": [-5, -3, -1, 0, 1, 3, 5, 8, 10],
+  "fx": {
+    "fred_series_id": "DEXINUS",
+    "fred_url": "https://fred.stlouisfed.org/series/DEXINUS",
+    "yahoo_ticker": "INR=X",
+    "unit": "INR per 1 USD (positive shock = rupee depreciation)"
+  },
+  "targets": [
+    {
+      "target_name": "india_cpi_inflation_pct",
+      "enabled": true,
+      "source_type": "fred",
+      "source_name": "OECD Main Economic Indicators via FRED",
+      "series_id": "INDCPIALLMINMEI",
+      "source_url": "https://fred.stlouisfed.org/series/INDCPIALLMINMEI",
+      "transform": "yoy_pct_from_index",
+      "unit": "percent, year-over-year change of CPI (all items)",
+      "frequency_original": "monthly",
+      "frequency_model": "monthly",
+      "seasonal_adjustment": "Not seasonally adjusted",
+      "observation_definition": "Monthly CPI index (2015=100); year-over-year % computed by this pipeline as (index_t / index_t-12 - 1) * 100",
+      "availability_lag_months": 1,
+      "publication_lag_or_availability_rule": "Assumed known one month after its reference month (conservative; the OECD/FRED copy may appear later)",
+      "is_proxy": false,
+      "notes": "Source is an index, so YoY is computed here (not double-differenced). The FRED copy of this OECD series was seen to end in early 2025 when checked - see last_observation in data/source_metadata.csv after download."
+    },
+    {
+      "target_name": "india_policy_discount_rate_pct",
+      "enabled": true,
+      "source_type": "fred",
+      "source_name": "IMF International Financial Statistics via FRED",
+      "series_id": "INTDSRINM193N",
+      "source_url": "https://fred.stlouisfed.org/series/INTDSRINM193N",
+      "transform": "level",
+      "unit": "percent per annum",
+      "frequency_original": "monthly",
+      "frequency_model": "monthly",
+      "seasonal_adjustment": "Not seasonally adjusted",
+      "observation_definition": "IMF IFS 'Discount Rate' for India, monthly value as published",
+      "availability_lag_months": 0,
+      "publication_lag_or_availability_rule": "Policy rate changes are public immediately; value for month t treated as known at end of month t",
+      "is_proxy": true,
+      "notes": "PROXY, NOT THE REPO RATE. Values seen while checking the catalogue (4.25 in Mar 2022; 5.15 in Jun-Jul 2022) are consistent with the RBI Bank Rate (repo + 0.25) - this is an inference, verify against RBI. The FRED copy appeared to stop around Jul 2022 when checked. For a true repo series supply data/raw/manual/rbi_repo_rate_monthly.csv."
+    },
+    {
+      "target_name": "india_10y_gsec_yield_pct",
+      "enabled": true,
+      "source_type": "fred",
+      "source_name": "OECD Main Economic Indicators via FRED",
+      "series_id": "INDIRLTLT01STM",
+      "source_url": "https://fred.stlouisfed.org/series/INDIRLTLT01STM",
+      "transform": "level",
+      "unit": "percent per annum (10-year government bond yield)",
+      "frequency_original": "monthly",
+      "frequency_model": "monthly",
+      "seasonal_adjustment": "Not seasonally adjusted",
+      "observation_definition": "OECD long-term (10-year) government bond yield, monthly. Averaging convention (monthly average vs end-of-month) NOT verified - confirm in OECD metadata",
+      "availability_lag_months": 0,
+      "publication_lag_or_availability_rule": "Treated as known at end of its reference month",
+      "is_proxy": false,
+      "notes": "Coverage seen in the FRED vintage catalogue: Dec 2011 onward. Single maturity (10y) only."
+    },
+    {
+      "target_name": "india_repo_rate_pct",
+      "enabled": true,
+      "source_type": "manual_csv",
+      "source_name": "RBI (user-supplied CSV)",
+      "series_id": "RBI_REPO_MANUAL",
+      "path": "data/raw/manual/rbi_repo_rate_monthly.csv",
+      "source_url": "https://www.rbi.org.in",
+      "transform": "level",
+      "unit": "percent per annum",
+      "frequency_original": "user-supplied (must be monthly)",
+      "frequency_model": "monthly",
+      "seasonal_adjustment": "Not applicable",
+      "observation_definition": "End-of-month RBI policy repo rate as entered by the user (CSV columns: month_end, repo_rate_pct)",
+      "availability_lag_months": 0,
+      "publication_lag_or_availability_rule": "Repo changes are announced immediately; end-of-month value known at end of month",
+      "is_proxy": false,
+      "notes": "OPTIONAL. Skipped automatically if the CSV is absent. No automated RBI download was verified, so no repo data is bundled or invented."
+    }
+  ],
+  "excluded_targets": [
+    {
+      "target_name": "india_import_price_index",
+      "reason": "No India-specific monthly import-price series could be verified on FRED. Only import VALUE (USD) series were found, which are not prices. Not substituted."
+    }
+  ]
+}
